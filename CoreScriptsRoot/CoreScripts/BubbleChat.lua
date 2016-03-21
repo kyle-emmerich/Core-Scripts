@@ -6,6 +6,7 @@
 
 --[[ SERVICES ]]
 local RunService = game:GetService('RunService')
+local UserInputService = game:GetService('UserInputService')
 local CoreGuiService = game:GetService('CoreGui')
 local PlayersService = game:GetService('Players')
 local ChatService = game:GetService("Chat")
@@ -620,7 +621,7 @@ local function createChatOutput()
 	end
 
 	function this:BubbleChatEnabled()
-		return PlayersService.BubbleChat
+		return PlayersService.BubbleChat or UserInputService.VREnabled
 	end
 
 	function this:CameraChanged(prop)
