@@ -319,7 +319,7 @@ local function CreateCamera()
 			return 
 		end
 		
-		local vrFrame = UserInputService.UserHeadCFrame
+		local vrFrame = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
 		local vrRotation = vrFrame - vrFrame.p
 		local rootJoint = player.Character.HumanoidRootPart.RootJoint 
 		rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
