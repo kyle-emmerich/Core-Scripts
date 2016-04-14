@@ -34,6 +34,7 @@ local LocalPlayer = Players.LocalPlayer
 
 --[[ Constants ]]--
 local thumbstickDeadzone = 0.22 --raised from 14% on 3/1/16 to accommodate looser XB360 controllers
+local vrDPadInterval = math.rad(45)
 
 function assignActivateGamepad()
 	local connectedGamepads = UserInputService:GetConnectedGamepads()
@@ -75,6 +76,12 @@ function Gamepad:Enable()
 		if inputObject.Position.magnitude > thumbstickDeadzone then
 			MasterControl:AddToPlayerMovement(-currentMoveVector)
 			currentMoveVector =  Vector3.new(inputObject.Position.X, 0, -inputObject.Position.Y)
+			if UserInputService.VREnabled then
+				local angle = math.atan2(currentMoveVector.Z, currentMoveVector.X)
+				local magnitude = currentMoveVector.magnitude	
+				local newAngle = math.floor((angle / vrDPadInterval) + 0.5) * vrDPadInterval
+				currentMoveVector = Vector3.new(math.cos(newAngle), 0, math.sin(newAngle)) * magnitude
+			end
 			MasterControl:AddToPlayerMovement(currentMoveVector)
 		else
 			MasterControl:AddToPlayerMovement(-currentMoveVector)
