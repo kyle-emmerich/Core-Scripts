@@ -7,52 +7,7 @@ local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
-local PlayersService = game.Players
-
---Util
-local Util = {}
-do
-	function Util.Create(instanceType)
-		return function(data)
-			local obj = Instance.new(instanceType)
-			for k, v in pairs(data) do
-				if type(k) == 'number' then
-					v.Parent = obj
-				else
-					obj[k] = v
-				end
-			end
-			return obj
-		end
-	end
-
-	-- RayPlaneIntersection (shortened)
-	-- http://www.siggraph.org/education/materials/HyperGraph/raytrace/rayplane_intersection.htm
-	function Util.RayPlaneIntersection(ray, planeNormal, pointOnPlane)
-		planeNormal = planeNormal.unit
-		ray = ray.Unit
-
-		local Vd = planeNormal:Dot(ray.Direction)
-		if Vd == 0 then -- parallel, no intersection
-			return nil
-		end
-
-		local V0 = planeNormal:Dot(pointOnPlane - ray.Origin)
-		local t = V0 / Vd
-		if t < 0 then --plane is behind ray origin, and thus there is no intersection
-			return nil
-		end
-		
-		return ray.Origin + ray.Direction * t
-	end
-
-	function Util.ConvertUDim2(parentAbsolute, childUDim2)
-		local x = (parentAbsolute.X * childUDim2.X.Scale) + childUDim2.X.Offset
-		local y = (parentAbsolute.Y * childUDim2.Y.Scale) + childUDim2.Y.Offset
-		return Vector2.new(x, y)
-	end
-end
---End of Util
+local Utility = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Utility"))
 
 
 --Panel3D State variables
@@ -91,7 +46,7 @@ local function getCursor()
 		--If not, create a new one because using the old one would
 		--cause an error; a destroyed Instance is invalidated and all
 		--properties are locked.
-		currentCursorImage = Util.Create "ImageLabel" {
+		currentCursorImage = Utility.Create "ImageLabel" {
 			Parent = hideCursorContainer,
 			Image = "rbxasset://textures/Cursors/Gamepad/Pointer.png",
 			Size = UDim2.new(0, 8, 0, 8),
@@ -114,7 +69,7 @@ Panel3D.Type = {
 	FixedToHead = 4
 }
 
-Panel3D.OnPanelClosed = Util.Create 'BindableEvent' {
+Panel3D.OnPanelClosed = Utility.Create 'BindableEvent' {
 	Name = 'OnPanelClosed'
 }
 
@@ -168,7 +123,7 @@ function Panel3D.RaycastOntoPanel(part, parentGui, gui, ray)
 	local planeNormal = planeCF.lookVector
 	local pointOnPlane = planeCF.p + (planeNormal * partThickness * 0.5)
 
-	local worldIntersectPoint = Util.RayPlaneIntersection(ray, planeNormal, pointOnPlane)
+	local worldIntersectPoint = Utility.RayPlaneIntersection(ray, planeNormal, pointOnPlane)
 	if worldIntersectPoint then
 		local parentGuiWidth, parentGuiHeight = parentGui.AbsoluteSize.X, parentGui.AbsoluteSize.Y
 		local localIntersectPoint = (planeCF:pointToObjectSpace(worldIntersectPoint) / currentHeadScale) * Vector3.new(-1, 1, 1) + Vector3.new(partWidth / 2, -partHeight / 2, 0)
@@ -220,18 +175,22 @@ local function OnCharacterAdded(character)
 	end)
 end
 spawn(function()
-	while not PlayersService.LocalPlayer do wait() end
-	PlayersService.LocalPlayer.CharacterAdded:connect(OnCharacterAdded)
-	if PlayersService.LocalPlayer.Character then OnCharacterAdded(PlayersService.LocalPlayer.Character) end
+	while not game.Players.LocalPlayer do wait() end
+	game.Players.LocalPlayer.CharacterAdded:connect(OnCharacterAdded)
+	if game.Players.LocalPlayer.Character then OnCharacterAdded(game.Players.LocalPlayer.Character) end
 end)
 local function autoHideCursor(hide)
+	if not game.Players.LocalPlayer then
+		cursorHidden = false
+		return
+	end
 	if not UserInputService.VREnabled then
 		cursorHidden = false
 		return
 	end
 	if hide then
 		--don't hide if there's a tool in the character
-		local character = PlayersService.LocalPlayer.Character
+		local character = game.Players.LocalPlayer.Character
 		if character and hasTool then
 			return
 		end
@@ -308,9 +267,10 @@ end
 --Panel accessor methods
 function Panel:GetPart()
 	if not self.part then
-		self.part = Util.Create "Part" {
+		self.part = Utility.Create "Part" {
 			Name = self.name,
 			Parent = nil,
+			Archivable = false,
 
 			Transparency = 1,
 
@@ -326,8 +286,9 @@ end
 function Panel:GetGUI()
 	if not self.gui then
 		local part = self:GetPart()
-		self.gui = Util.Create "SurfaceGui" {
+		self.gui = Utility.Create "SurfaceGui" {
 			Parent = CoreGui,
+			Archivable = false,
 			Adornee = part,
 			Active = true,
 			ToolPunchThroughDistance = 1000,
@@ -853,7 +814,7 @@ function Subpanel:GetGUI()
 		return self.gui
 	end
 
-	self.gui = Util.Create "SurfaceGui" {
+	self.gui = Utility.Create "SurfaceGui" {
 		Parent = CoreGui,
 		Adornee = self:GetPart(),
 		Active = true,
@@ -862,7 +823,7 @@ function Subpanel:GetGUI()
 		Enabled = self.parentPanel.isEnabled,
 		AlwaysOnTop = true
 	}
-	self.guiSurrogate = Util.Create "Frame" {
+	self.guiSurrogate = Utility.Create "Frame" {
 		Parent = self.gui,
 
 		Active = false,
