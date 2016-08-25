@@ -15,6 +15,15 @@ local SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0, 0, 0, 0)
 local SETTINGS_BASE_ZINDEX = 2
 local DEV_CONSOLE_ACTION_NAME = "Open Dev Console"
 
+local BUMPER_IMG_WIDTH = 115
+local BUMPER_IMG_HEIGHT = 64
+local BUMPER_MARGIN = 30
+local MINIMUM_BUMPER_HINT_HEIGHT = 15
+
+local VR_PANEL_RESOLUTION = 200
+local VR_PANEL_WIDTH_STUDS = 4
+local VR_PANEL_HEIGHT_STUDS = 4
+
 --[[ SERVICES ]]
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
@@ -214,7 +223,7 @@ local function CreateSettingsHub()
 			Size = SETTINGS_SHIELD_SIZE,
 			Position = SETTINGS_SHIELD_ACTIVE_POSITION,
 			BorderSizePixel = 0,
-			ClipsDescendants = true,
+			ClipsDescendants = false,
 			BackgroundTransparency = 1,
 			Visible = true,
 			ZIndex = SETTINGS_BASE_ZINDEX,
@@ -239,12 +248,26 @@ local function CreateSettingsHub()
 			Parent = this.Shield,
 
 			BackgroundColor3 = SETTINGS_SHIELD_COLOR,
-			BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY,
-			Position = UDim2.new(0, -4, 0, 24),
-			Size = UDim2.new(1, 8, 1, -40),
+			BackgroundTransparency = 1, --SETTINGS_SHIELD_TRANSPARENCY
+			Position = UDim2.new(0, -10 + 115 + 20, 0, 24),
+			Size = UDim2.new(1, 20 - 115 - 115 - 20 - 20, 1, -32),
 			BorderSizePixel = 0,
 
 			Visible = false
+		}
+		local smoothVRShield = utility:Create("ImageLabel") { --Remove this when we get proper UI antialiasing
+			Name = "TemporarySmoothFrame",
+			Parent = this.VRShield,
+
+			BackgroundTransparency = 1,
+			Image = "rbxasset://textures/ui/vr/rectBackgroundWhite.png",
+			ScaleType = Enum.ScaleType.Slice,
+			SliceCenter = Rect.new(5, 5, 15, 15),
+			ImageTransparency = SETTINGS_SHIELD_TRANSPARENCY,
+			ImageColor3 = SETTINGS_SHIELD_COLOR,
+
+			Position = UDim2.new(0, -1, 0, -1),
+			Size = UDim2.new(1, 2, 1, 2)
 		}
 
 		this.Modal = utility:Create'TextButton' -- Force unlocks the mouse, really need a way to do this via UIS
@@ -272,7 +295,61 @@ local function CreateSettingsHub()
 			Parent = this.Shield
 		};
 
-		local barHeight = 60
+		--Bumper hints
+		this.BumperHintBar = utility:Create("Frame") {
+			Parent = this.Shield,
+			Visible = false,
+			Name = "BumperHints",
+			BackgroundTransparency = 1,
+
+			ZIndex = SETTINGS_BASE_ZINDEX + 1,
+
+			Position = UDim2.new(0, 0, 0, 0),
+			Size = UDim2.new(1, 0, 0, 64)
+		}
+	
+		this.BumperHintLeft = utility:Create("ImageLabel") {
+			Parent = this.BumperHintBar,
+			Visible = true,
+			Name = "BumperHintLeft",
+			Image = "rbxassetid://408462759",
+			ImageRectOffset = Vector2.new(116, 416),
+			ImageRectSize = Vector2.new(BUMPER_IMG_WIDTH, BUMPER_IMG_HEIGHT),
+			BackgroundTransparency = 1,
+
+			ZIndex = SETTINGS_BASE_ZINDEX + 1,
+			Position = UDim2.new(0, 0, 0, 0),
+			Size = UDim2.new(0, BUMPER_IMG_WIDTH, 0, BUMPER_IMG_HEIGHT)
+		}
+		this.BumperHintRight = utility:Create("ImageLabel") {
+			Parent = this.BumperHintBar,
+			Visible = true,
+			Name = "BumperHintRight",
+			Image = "rbxassetid://408462759",
+			ImageRectOffset = Vector2.new(0, 416),
+			ImageRectSize = Vector2.new(BUMPER_IMG_WIDTH, BUMPER_IMG_HEIGHT),
+			BackgroundTransparency = 1,
+
+			ZIndex = SETTINGS_BASE_ZINDEX + 1,
+			Position = UDim2.new(1, -BUMPER_IMG_WIDTH, 0, 0),
+			Size = UDim2.new(0, BUMPER_IMG_WIDTH, 0, BUMPER_IMG_HEIGHT)
+		}
+
+		local gamepadInputTypes = {
+			[Enum.UserInputType.Gamepad1] = true,
+			[Enum.UserInputType.Gamepad2] = true,
+			[Enum.UserInputType.Gamepad3] = true,
+			[Enum.UserInputType.Gamepad4] = true,
+		}
+		UserInputService.InputBegan:connect(function(inputObj)
+			if gamepadInputTypes[inputObj.UserInputType] and this.BumperHintBar.Size.Y.Offset > MINIMUM_BUMPER_HINT_HEIGHT then
+				this.BumperHintBar.Visible = true
+			else
+				this.BumperHintBar.Visible = false
+			end
+		end)
+		---------------
+
 		if isSmallTouchScreen then
 			barHeight = 40
 			this.HubBar.Size = UDim2.new(1,-10,0,40)
@@ -402,6 +479,43 @@ local function CreateSettingsHub()
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
 
+		local function onHubBarLayoutChanged() 
+			local bumperHintSpace = BUMPER_IMG_WIDTH + BUMPER_MARGIN
+			local bumperScale = 1
+			local screenWidth = RobloxGui.AbsoluteSize.x
+			local hubBarWidth = this.HubBar.AbsoluteSize.x 
+
+			if UserInputService.VREnabled then
+				local panel = require(RobloxGui.Modules.VR.Panel3D).Get("SettingsMenu")
+				local panelWidth, panelHeight = panel:GetSizePixels()
+				screenWidth = panelWidth
+			end
+
+			local availableSpace = (screenWidth - hubBarWidth) / 2
+			if availableSpace < bumperHintSpace then
+				bumperScale = availableSpace / bumperHintSpace
+			end
+
+			local bumperWidth = BUMPER_IMG_WIDTH * bumperScale
+			local bumperHeight = BUMPER_IMG_HEIGHT * bumperScale
+			local bumperMargin = BUMPER_MARGIN * bumperScale
+
+			local xOffset =  -bumperWidth - bumperMargin
+			local yOffset = (this.HubBar.Size.Y.Offset - bumperHeight) / 2
+			this.BumperHintBar.Position = UDim2.new(
+				this.HubBar.Position.X.Scale, this.HubBar.Position.X.Offset + xOffset, 
+				this.HubBar.Position.Y.Scale, this.HubBar.Position.Y.Offset + yOffset
+			)
+			this.BumperHintBar.Size = UDim2.new(
+				this.HubBar.Size.X.Scale, this.HubBar.Size.X.Offset - (xOffset * 2),
+				0, bumperHeight
+			)
+
+			this.BumperHintLeft.Size = UDim2.new(0, bumperWidth, 0, bumperHeight)
+			this.BumperHintRight.Size = UDim2.new(0, bumperWidth, 0, bumperHeight)
+			this.BumperHintRight.Position = UDim2.new(1, -bumperWidth, 0, 0)
+		end
+
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
@@ -500,6 +614,7 @@ local function CreateSettingsHub()
 				0.5,
 				-usePageSize/2
 			)
+			onHubBarLayoutChanged()
 		end
 		-- TODO: disconnect this event?
 		RobloxGui.Changed:connect(function(prop)
@@ -967,7 +1082,11 @@ local function CreateSettingsHub()
 		local VRHub = require(RobloxGui.Modules.VR.VRHub)
 		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 		local panel = Panel3D.Get(thisModuleName)
-		panel:ResizeStuds(4, 4, 200)
+
+		local resolution = VR_PANEL_RESOLUTION
+		local spaceForBumpers = ((BUMPER_IMG_WIDTH * 2) + (BUMPER_MARGIN * 2)) / resolution
+
+		panel:ResizeStuds(VR_PANEL_WIDTH_STUDS + spaceForBumpers, VR_PANEL_HEIGHT_STUDS, resolution)
 		panel:SetType(Panel3D.Type.Fixed)
 		panel:SetVisible(false)
 		panel:SetCanFade(false)
