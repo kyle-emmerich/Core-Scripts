@@ -243,14 +243,16 @@ local function CreateSettingsHub()
 			ZIndex = SETTINGS_BASE_ZINDEX,
 			Parent = this.ClippingShield
 		};
+
+		local vrShieldInset = BUMPER_IMG_WIDTH + BUMPER_MARGIN
 		this.VRShield = utility:Create("Frame") {
 			Name = "VRBackground",
 			Parent = this.Shield,
 
 			BackgroundColor3 = SETTINGS_SHIELD_COLOR,
-			BackgroundTransparency = 1, --SETTINGS_SHIELD_TRANSPARENCY
-			Position = UDim2.new(0, -10 + 115 + 20, 0, 24),
-			Size = UDim2.new(1, 20 - 115 - 115 - 20 - 20, 1, -32),
+			BackgroundTransparency = 1, --SETTINGS_SHIELD_TRANSPARENCY (replace 1 with this when removing smoothVRShield)
+			Position = UDim2.new(0, -10 + vrShieldInset, 0, 24),
+			Size = UDim2.new(1, 20 - (vrShieldInset * 2), 1, -32),
 			BorderSizePixel = 0,
 
 			Visible = false
