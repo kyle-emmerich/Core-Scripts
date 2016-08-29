@@ -20,6 +20,10 @@ local BUMPER_IMG_HEIGHT = 64
 local BUMPER_MARGIN = 30
 local MINIMUM_BUMPER_HINT_HEIGHT = 15
 
+local BUMPER_LEFT_SPRITE_OFFSET = Vector2.new(116, 416)
+local BUMPER_RIGHT_SPRITE_OFFSET = Vector2.new(0, 416)
+local XBOX_LIGHT_SPRITESHEET = "rbxasset://textures/ui/Input/xboxlight.png"
+
 local VR_PANEL_RESOLUTION = 200
 local VR_PANEL_WIDTH_STUDS = 4
 local VR_PANEL_HEIGHT_STUDS = 4
@@ -314,8 +318,8 @@ local function CreateSettingsHub()
 			Parent = this.BumperHintBar,
 			Visible = true,
 			Name = "BumperHintLeft",
-			Image = "rbxassetid://408462759",
-			ImageRectOffset = Vector2.new(116, 416),
+			Image = XBOX_LIGHT_SPRITESHEET,
+			ImageRectOffset = BUMPER_LEFT_SPRITE_OFFSET,
 			ImageRectSize = Vector2.new(BUMPER_IMG_WIDTH, BUMPER_IMG_HEIGHT),
 			BackgroundTransparency = 1,
 
@@ -327,8 +331,8 @@ local function CreateSettingsHub()
 			Parent = this.BumperHintBar,
 			Visible = true,
 			Name = "BumperHintRight",
-			Image = "rbxassetid://408462759",
-			ImageRectOffset = Vector2.new(0, 416),
+			Image = XBOX_LIGHT_SPRITESHEET,
+			ImageRectOffset = BUMPER_RIGHT_SPRITE_OFFSET,
 			ImageRectSize = Vector2.new(BUMPER_IMG_WIDTH, BUMPER_IMG_HEIGHT),
 			BackgroundTransparency = 1,
 
